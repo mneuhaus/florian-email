@@ -5,76 +5,79 @@ namespace A3plus;
 class Email
 {
 
+    /**
+     * ****************************************************
+     * ***************    Dokumentation    ****************
+     * ****************************************************
+     *
+     * Include Email Class :
+     * require_once ("your/path/email.php");
+     *
+     *     Include Email Class :
+     * require_once ("your/path/email.php");
+     *
+     * Work with Namespaces:
+     * use A3plus\Email as Email;
+     *
+     * Initialize new Email:
+     * $mail = new Email( "Sender E-Mail Address", "Sender Name", "Sender Message", "$_POST["a3SpamProtection"]");
+     *
+     * To show Errors use
+     * $mail->getError
+     *
+     * Integrating the following field for spam hedging
+     * <input type="hidden" name="a3SpamProtection" >
+     */
 
-    // **************************************************** //
-    // ***************    Dokumentation    **************** //
-    // **************************************************** //
-
-    // Include Email Class :
-    //require_once ("your/path/email.php");
-
-    // Work with Namespaces:
-    //use A3plus\Email as Email;
-
-    // Initialize new Email:
-    //$mail = new Email( "Sender E-Mail Address", "Sender Name", "Sender Message", "$_POST["a3SpamProtection"]");
-
-    // To show Errors use
-    // $mail->getError
-
-    // Integrating the following field for spam hedging
-    // <input type="hidden" name="a3SpamProtection" >
-
-
-    // **************************************************** //
-    // ***********    Variables / Settings    ************* //
-    // **************************************************** //
-
+    /**
+     * ****************************************************
+     * ***********    Variables / Settings    *************
+     * ****************************************************
+     */
 
     // E-Mail Address of Recipient
-    private $senderMail;
+    protected $senderMail;
 
     // Name Address of Recipient
-    private $senderName;
+    protected $senderName;
 
     // Message Address of Recipient
-    private $senderMessage;
+    protected $senderMessage;
 
     // Field to check out Bots
-    private $spamField;
+    protected $spamField;
 
     //Mail of E-Mail Sender
-    private $recipientMail = "f.breuer@a3plus.de";
+    protected $recipientMail = "f.breuer@a3plus.de";
 
     //Short Mail Subject
-    private $mailSubject = "Kontaktformular Website";
+    protected $mailSubject = "Kontaktformular Website";
 
     //Spamtimeout in Seconds
-    private $Spamtimeout = 60;
+    protected $Spamtimeout = 60;
 
     //Error Handling
-    private $error;
+    protected $error;
 
     //Error Message for Spamfilter
-    private $errorSpamFilterMessage = "Spamfilter !!!";
+    protected $errorSpamFilterMessage = "Spamfilter !!!";
 
     //Error Message for non Validate Sender Email
-    private $errorSenderMailMessage = "Sender E-Mail Adresse ist nicht valide";
+    protected $errorSenderMailMessage = "Sender E-Mail Adresse ist nicht valide";
 
     //Error Message for non Validate Sender Recipient
-    private $errorRecipientMailMessage = "Empfänger E-Mail Adresse ist nicht valide";
+    protected $errorRecipientMailMessage = "Empfänger E-Mail Adresse ist nicht valide";
 
     // Other Settings
 
     //Wordwrap after number of Characters
-    private $characterPerLine = 70;
+    protected $characterPerLine = 70;
 
-
-
-    // **************************************************** //
-    // *****************    Functions    ****************** //
-    // **************************************************** //
-
+    /*
+     * ****************************************************
+     * *****************    Functions    ******************
+     * ****************************************************
+     */
 
     public function __construct($email, $name, $message, $spamField)
     {
@@ -87,51 +90,46 @@ class Email
 
     public function validateEmail($email)
     {
-        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return true;
-        }else{
-            return false;
-        }
+        return filter_var($email, FILTER_VALIDATE_EMAIL) === TRUE;
     }
 
 
-    public function spamFilter()
+    public function isSpam()
     {
-        if($this->spamField == "") {
-            if (!isset($_SESSION['lastSendMail']) || $_SESSION['lastSendMail'] + $this->Spamtimeout <= time()) {
-                $_SESSION['lastSendMail'] = time();
-                return true;
-            } else {
-                return false;
-            }
-        }else{
-            return false;
+        if(strlen($this->spamField) > 0) {
+            return TRUE;
         }
+
+        if (isset($_SESSION['lastSendMail']) && $_SESSION['lastSendMail'] + $this->Spamtimeout <= time()) {
+            return true;
+        }
+        $_SESSION['lastSendMail'] = time();
+
+        return false;
     }
 
     public function mailBuilder()
     {
-        if($this->validateEmail($this->senderMail)){
-
-            if($this->validateEmail($this->recipientMail)){
-
-                if($this->spamFilter()){
-                    // Vaild Email, Ready to Send
-                    $this->sendMail();
-                }else{
-                    //Error Spamfilter
-                    $this->setError($this->errorSpamFilterMessage);
-                }
-
-            }else{
-                //Error Recipient Mail is no valid Email
-                $this->setError($this->errorRecipientMailMessage);
-            }
-
-        }else {
-            //Error Sender Mail is no valid Email
-            $this->setError($this->errorSenderMailMessage);
+        if ($this->validateEmail($this->senderMail) === FALSE) {
+            //Error Recipient Mail is no valid Email
+            $this->setError($this->errorRecipientMailMessage);
+            return;
         }
+
+        if ($this->validateEmail($this->recipientMail) === FALSE) {
+            //Error Recipient Mail is no valid Email
+            $this->setError($this->errorSenderMailMessage);
+            return;
+        }
+
+        if ($this->isSpam() === TRUE) {
+            //Error Spamfilter
+            $this->setError($this->errorSpamFilterMessage);
+            return;
+        }
+
+        // Vaild Email, Ready to Send
+        $this->sendMail();
     }
 
 
